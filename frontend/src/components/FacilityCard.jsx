@@ -1,7 +1,32 @@
-import React from 'react';
-import { Building2, Navigation, CheckCircle, Phone, Award, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Building2, Navigation, CheckCircle, Phone, Award, ArrowRight, Truck, Clock, ShieldCheck } from 'lucide-react';
+import { fetchMapplsDrivingDistance } from '../services/api';
 
-export default function FacilityCard({ facilities = [], selectedCategory, selectedFacility, onSelectFacility }) {
+export default function FacilityCard({ facilities = [], selectedCategory, selectedFacility, onSelectFacility, area }) {
+  const [roadLogistics, setRoadLogistics] = useState({});
+  const [loadingRouteId, setLoadingRouteId] = useState(null);
+
+  const handleInspectRoute = async (e, fac) => {
+    e.stopPropagation();
+    if (roadLogistics[fac.id]) return;
+
+    setLoadingRouteId(fac.id);
+    const originLat = area?.lat || 17.2880;
+    const originLon = area?.lon || 74.1920;
+
+    try {
+      const data = await fetchMapplsDrivingDistance(originLat, originLon, fac.latitude, fac.longitude);
+      setRoadLogistics((prev) => ({
+        ...prev,
+        [fac.id]: data
+      }));
+    } catch (err) {
+      console.warn('Driving distance error:', err);
+    } finally {
+      setLoadingRouteId(null);
+    }
+  };
+
   if (!facilities || facilities.length === 0) {
     return (
       <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
@@ -129,12 +154,61 @@ export default function FacilityCard({ facilities = [], selectedCategory, select
                     <strong>Processing:</strong> {Object.values(fac.processing_methods)[0]}
                   </div>
                 )}
+
+                {/* Road Logistics Section (Opt-in / Cached) */}
+                <div style={{ marginBottom: '0.75rem' }}>
+                  {roadLogistics[fac.id] ? (
+                    <div style={{
+                      padding: '0.4rem 0.6rem',
+                      borderRadius: '6px',
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      border: '1px solid rgba(59, 130, 246, 0.25)',
+                      fontSize: '0.75rem',
+                      color: '#93c5fd',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Truck size={12} /> Road: <strong>{roadLogistics[fac.id].road_distance_km} km</strong>
+                        <span style={{ color: 'var(--text-muted)' }}>•</span>
+                        <Clock size={12} /> ~{roadLogistics[fac.id].estimated_duration_minutes} min
+                      </span>
+                      <span style={{ fontSize: '0.68rem', color: '#60a5fa' }}>
+                        {roadLogistics[fac.id].cache_hit || roadLogistics[fac.id].client_cache_hit ? '⚡ Cached' : 'Estimated'}
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => handleInspectRoute(e, fac)}
+                      disabled={loadingRouteId === fac.id}
+                      style={{
+                        background: 'transparent',
+                        border: '1px dashed rgba(255, 255, 255, 0.15)',
+                        borderRadius: '6px',
+                        padding: '0.3rem 0.6rem',
+                        fontSize: '0.72rem',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <Truck size={11} />
+                      {loadingRouteId === fac.id ? 'Calculating road...' : 'Check Road Distance & ETA'}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Footer Meta */}
               <div style={{
                 borderTop: '1px solid var(--border-glass)',
                 paddingTop: '0.75rem',
+
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',

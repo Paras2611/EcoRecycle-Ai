@@ -65,3 +65,38 @@ class AreaAnalysisResultResponse(BaseModel):
     longitude: float
     radius_km: float
     nearby_facilities: List[FacilityItem]
+
+# --- User Auth & Saved Sessions Schemas ---
+
+class UserRegister(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    email: str = Field(..., min_length=5, max_length=150)
+    password: str = Field(..., min_length=6, max_length=100)
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: str
+    name: str
+    email: str
+    role: str
+    created_at: Optional[Any] = None
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+class SavedSessionItem(BaseModel):
+    id: str
+    area_name: str
+    city_name: Optional[str] = None
+    latitude: float
+    longitude: float
+    radius_km: float
+    total_items: int
+    created_at: Any
+    waste_summary: Optional[Dict[str, int]] = None
+

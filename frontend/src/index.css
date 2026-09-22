@@ -193,11 +193,76 @@ h1, h2, h3, h4, h5, h6 {
   gap: 1.75rem;
 }
 
-@media (max-width: 1024px) {
-  .two-column-grid {
-    grid-template-columns: 1fr;
+.desktop-only {
+  display: flex !important;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
+.mobile-drawer {
+  background: rgba(9, 13, 22, 0.98);
+  border-bottom: 1px solid var(--border-glass);
+  backdrop-filter: blur(20px);
+  animation: slideDown 0.25s ease-out forwards;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: flex !important;
+  }
+  .app-navbar {
+    padding: 0.75rem 1rem;
+  }
+  .main-content {
+    padding: 1rem;
+    gap: 1.25rem;
+  }
+  .hero-section {
+    padding: 1.5rem 0.5rem 1rem;
+  }
+  .hero-title {
+    font-size: 1.85rem;
+  }
+  .hero-subtitle {
+    font-size: 0.92rem;
+  }
+  .glass-panel {
+    padding: 1rem !important;
+    border-radius: 12px;
+  }
+  .leaflet-container, .map-view-canvas {
+    height: 320px !important;
   }
 }
+
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 1.55rem;
+  }
+  .brand-name {
+    font-size: 1.15rem;
+  }
+  .leaflet-container, .map-view-canvas {
+    height: 270px !important;
+  }
+}
+
+.map-view-canvas {
+  height: 440px;
+}
+
+
 
 /* Button & Controls */
 .btn-primary {

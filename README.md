@@ -99,7 +99,8 @@ Where:
 |---|---|---|
 | **Frontend** | React 19 + Vite | Fast, modern client SPA |
 | **Styling** | Vanilla CSS Design Tokens | Glassmorphic, modern dark mode eco-tech aesthetic |
-| **Mapping** | Leaflet + OpenStreetMap | Interactive spatial boundary and facility pins |
+| **Mapping** | Leaflet + OpenStreetMap / Mappls GIS | Interactive spatial boundary, facility pins & Mappls opt-in layer |
+| **GIS Services** | Mappls (MapmyIndia) + Haversine | Reverse geocoding & driving logistics with strict quota caching |
 | **Icons** | Lucide React | Clean, modern iconography |
 | **Backend** | Python 3.11+ / FastAPI | High-performance asynchronous REST API |
 | **Web Server** | Uvicorn | ASGI production server |
@@ -233,7 +234,7 @@ Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 
 Run the full pytest suite from the project root:
 ```bash
-python -m pytest backend/tests/test_api.py -v
+python -m pytest backend/tests/ -v
 ```
 
 ### Test Coverage Breakdown:
@@ -241,10 +242,14 @@ python -m pytest backend/tests/test_api.py -v
 - `test_suitability_scoring`: Verifies weighting factors ($W_c, W_d, W_k$) and distance decay.
 - `test_knowledge_base`: Checks domain recycling mappings and carbon offset values.
 - `test_batch_aggregation`: Verifies exact percentage arithmetic on multi-item batches.
+- `test_mappls_preset_cache`: Ensures known locations hit zero-cost cache with 0 API calls.
+- `test_mappls_driving_distance_cache`: Validates road distance estimation and caching.
+- `test_mappls_endpoints`: Tests status, reverse geocode, and route distance endpoints.
 - `test_api_health`: Validates database connectivity and facility indexing.
 - `test_api_nearby_facilities`: Tests radius filtering and JSON serialization.
 - `test_api_recommendations`: Tests industrial process recommendations.
 - `test_api_single_image_analysis`: Tests multipart file upload and classification output.
+
 
 ---
 

@@ -36,6 +36,11 @@ env/
 .coverage
 htmlcov/
 
+# ML Model Weights (auto-downloaded)
+*.onnx
+backend/app/ml/weights/
+
+
 # Node / Frontend
 node_modules/
 frontend/node_modules/

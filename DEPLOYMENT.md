@@ -86,11 +86,13 @@ Under the **Environment Variables** tab for your Web Service, add:
 | Key | Value | Description |
 |---|---|---|
 | `DATABASE_URL` | *(Paste Internal Database URL from Step 1)* | Database connection string |
+| `MAPPLS_API_KEY` | `vsigazhrbgssyvwteecwxjllwdyiyyygjlri` | Mappls MapmyIndia API key |
 | `PYTHON_VERSION` | `3.11.8` | Ensures consistent Python runtime |
 | `PORT` | `8000` | Target port |
 | `CORS_ORIGINS` | `*` *(or your Vercel URL later)* | Allowed origins for web requests |
 
 5. Click **Create Web Service**.
+
 
 #### Step 4: Verify Backend Deployment
 Once the build completes (usually ~2-3 minutes), copy your Render Web Service URL:  
@@ -127,8 +129,10 @@ Expand the **Environment Variables** section and add:
 | Key | Value | Description |
 |---|---|---|
 | `VITE_API_BASE_URL` | `https://your-backend-api.onrender.com` | Your live Render backend URL from Part 1 |
+| `VITE_MAPPLS_KEY` | `vsigazhrbgssyvwteecwxjllwdyiyyygjlri` | Mappls MapmyIndia key for opt-in GIS layer |
 
 > ⚠️ **Note:** Do NOT add a trailing slash `/` at the end of the URL.
+
 
 ### Step 4: Deploy
 1. Click **Deploy**.

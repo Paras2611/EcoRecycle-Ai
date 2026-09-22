@@ -1,5 +1,6 @@
-import React from 'react';
-import { MapPin, Compass, Navigation } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Compass, Navigation, Search, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { fetchMapplsReverseGeocode } from '../services/api';
 
 const PRESET_LOCATIONS = [
   { name: 'Karad, Maharashtra', lat: 17.2880, lon: 74.1920, state: 'Primary Target Hub' },
@@ -10,6 +11,9 @@ const PRESET_LOCATIONS = [
 ];
 
 export default function AreaSelector({ area, setArea }) {
+  const [isResolving, setIsResolving] = useState(false);
+  const [geoStatus, setGeoStatus] = useState(null);
+
   const handlePresetChange = (preset) => {
     setArea((prev) => ({
       ...prev,
@@ -17,7 +21,31 @@ export default function AreaSelector({ area, setArea }) {
       lat: preset.lat,
       lon: preset.lon,
     }));
+    setGeoStatus({ source: 'local_preset', message: 'Instant Preset ($0 API Calls)' });
   };
+
+  const handleMapplsLookup = async () => {
+    setIsResolving(true);
+    try {
+      const data = await fetchMapplsReverseGeocode(area.lat, area.lon);
+      if (data && data.formatted_address) {
+        setArea((prev) => ({
+          ...prev,
+          name: data.locality ? `${data.locality}, ${data.state}` : data.formatted_address,
+        }));
+        const isCached = data.cache_hit || data.client_cache_hit || data.source?.includes('cache');
+        setGeoStatus({
+          source: isCached ? 'cache' : 'mappls_live',
+          message: isCached ? 'Cached Locality ($0 Quota Used)' : 'Resolved via Mappls'
+        });
+      }
+    } catch (err) {
+      setGeoStatus({ source: 'error', message: 'Using local coordinates' });
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
 
   return (
     <div className="glass-panel" style={{ padding: '1.5rem' }}>
@@ -146,20 +174,63 @@ export default function AreaSelector({ area, setArea }) {
         </div>
       </div>
 
+      {/* Locality Resolver & Status Bar */}
       <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.75rem',
         padding: '0.75rem 1rem',
         borderRadius: '10px',
         background: 'rgba(16, 185, 129, 0.08)',
         border: '1px solid rgba(16, 185, 129, 0.2)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.6rem',
         fontSize: '0.82rem',
-        color: 'var(--text-secondary)'
       }}>
-        <Navigation size={15} color="var(--emerald-400)" />
-        <span>Active Zone: <strong style={{ color: 'var(--text-primary)' }}>{area.name}</strong> (Radius: {area.radiusKm} km)</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)' }}>
+          <Navigation size={15} color="var(--emerald-400)" />
+          <span>Active Zone: <strong style={{ color: 'var(--text-primary)' }}>{area.name}</strong></span>
+          {geoStatus && (
+            <span style={{
+              fontSize: '0.7rem',
+              padding: '2px 6px',
+              borderRadius: '6px',
+              background: geoStatus.source === 'cache' || geoStatus.source === 'local_preset' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(56, 189, 248, 0.2)',
+              color: geoStatus.source === 'cache' || geoStatus.source === 'local_preset' ? '#34d399' : '#38bdf8',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '3px'
+            }}>
+              <CheckCircle2 size={11} /> {geoStatus.message}
+            </span>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={handleMapplsLookup}
+          disabled={isResolving}
+          style={{
+            padding: '0.35rem 0.75rem',
+            borderRadius: '6px',
+            fontSize: '0.76rem',
+            fontWeight: 500,
+            cursor: isResolving ? 'not-allowed' : 'pointer',
+            border: '1px solid rgba(56, 189, 248, 0.4)',
+            background: 'rgba(56, 189, 248, 0.1)',
+            color: '#38bdf8',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            transition: 'all 0.2s ease'
+          }}
+          title="Resolve official Indian postal locality using Mappls (strict caching enabled)"
+        >
+          <Search size={12} />
+          {isResolving ? 'Resolving...' : 'Identify Locality (Mappls)'}
+        </button>
       </div>
     </div>
   );
 }
+

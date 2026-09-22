@@ -130,6 +130,21 @@ INITIAL_FACILITIES = [
     }
 ]
 
+def run_migrations(db: Session):
+    """Ensure missing columns are added to existing tables in SQLite/Postgres."""
+    from sqlalchemy import text
+    try:
+        db.execute(text("ALTER TABLE waste_analysis ADD COLUMN city_name VARCHAR(255)"))
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    try:
+        db.execute(text("ALTER TABLE waste_results ADD COLUMN image_name VARCHAR(255)"))
+        db.commit()
+    except Exception:
+        db.rollback()
+
 def seed_database(db: Session = None):
     """Seed initial recycling facilities and waste types if table is empty."""
     owns_session = False
@@ -139,6 +154,8 @@ def seed_database(db: Session = None):
         owns_session = True
 
     try:
+        run_migrations(db)
+
         existing_count = db.query(RecyclingFacility).count()
         if existing_count > 0:
             return existing_count

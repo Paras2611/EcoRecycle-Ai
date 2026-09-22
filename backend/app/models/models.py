@@ -31,6 +31,7 @@ class WasteAnalysis(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     area_name = Column(String(255), nullable=False)
+    city_name = Column(String(255), nullable=True, default="Karad")
     radius_km = Column(Float, default=10.0)
     total_items = Column(Integer, default=0)
     created_at = Column(DateTime, default=utc_now)
@@ -48,9 +49,11 @@ class WasteResult(Base):
     confidence = Column(Float, nullable=False)
     quantity = Column(Integer, default=1)
     detected_object = Column(String(150), nullable=True)
+    image_name = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=utc_now)
 
     analysis = relationship("WasteAnalysis", back_populates="results")
+
 
 
 class RecyclingFacility(Base):

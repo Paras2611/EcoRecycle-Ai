@@ -1,13 +1,56 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { Map, Layers, Navigation } from 'lucide-react';
+import { Map, Layers, Navigation, ShieldCheck } from 'lucide-react';
+
+const MAPPLS_KEY = import.meta.env.VITE_MAPPLS_KEY || 'vsigazhrbgssyvwteecwxjllwdyiyyygjlri';
 
 export default function MapView({ area, facilities = [], selectedFacility, onSelectFacility }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const tileLayerRef = useRef(null);
   const markersLayerRef = useRef(null);
   const radiusCircleRef = useRef(null);
   const userMarkerRef = useRef(null);
+
+  // Basemap toggle: 'carto_dark' (Default $0 cost) or 'mappls' (opt-in)
+  const [mapLayer, setMapLayer] = useState('carto_dark');
+  const [tileError, setTileError] = useState(false);
+
+  // Helper to attach appropriate tile layer
+  const applyTileLayer = (map, layerType) => {
+    if (tileLayerRef.current) {
+      map.removeLayer(tileLayerRef.current);
+      tileLayerRef.current = null;
+    }
+
+    if (layerType === 'mappls' && MAPPLS_KEY) {
+      // Mappls Raster Tiles layer
+      const mapplsTiles = L.tileLayer(`https://apis.mappls.com/advancedmaps/v1/${MAPPLS_KEY}/bhuvan_imagery/{z}/{x}/{y}.png`, {
+        attribution: '&copy; <a href="https://about.mappls.com" target="_blank" rel="noreferrer">Mappls MapmyIndia</a>',
+        maxZoom: 19,
+      });
+
+      mapplsTiles.on('tileerror', () => {
+        // Automatically recover and switch to free tiles if Mappls quota/credentials reject
+        setTileError(true);
+        setTimeout(() => {
+          setMapLayer('carto_dark');
+        }, 1500);
+      });
+
+      mapplsTiles.addTo(map);
+      tileLayerRef.current = mapplsTiles;
+    } else {
+      // CartoDB Dark Matter tile layer (100% free, fast, zero paid quota consumed)
+      const cartoTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+        maxZoom: 19,
+        subdomains: 'abcd',
+      });
+      cartoTiles.addTo(map);
+      tileLayerRef.current = cartoTiles;
+    }
+  };
 
   // Initialize Map
   useEffect(() => {
@@ -20,12 +63,7 @@ export default function MapView({ area, facilities = [], selectedFacility, onSel
         zoomControl: true,
       });
 
-      // CartoDB Dark Matter or OpenStreetMap tile layer for dark theme
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
-        maxZoom: 19,
-        subdomains: 'abcd',
-      }).addTo(map);
+      applyTileLayer(map, 'carto_dark');
 
       markersLayerRef.current = L.layerGroup().addTo(map);
       mapInstanceRef.current = map;
@@ -38,6 +76,14 @@ export default function MapView({ area, facilities = [], selectedFacility, onSel
       }
     };
   }, []);
+
+  // Update tile layer when toggled
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    setTileError(false);
+    applyTileLayer(mapInstanceRef.current, mapLayer);
+  }, [mapLayer]);
+
 
   // Update map view, center, user pin and radius circle
   useEffect(() => {
@@ -153,7 +199,7 @@ export default function MapView({ area, facilities = [], selectedFacility, onSel
 
   return (
     <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.8rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <div style={{
             background: 'rgba(99, 102, 241, 0.15)',
@@ -165,25 +211,102 @@ export default function MapView({ area, facilities = [], selectedFacility, onSel
             <Map size={20} />
           </div>
           <div>
-            <h3 style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>4. Geospatial Intelligence Map</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>4. Geospatial Intelligence Map</h3>
+              <span style={{
+                fontSize: '0.7rem',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                background: 'rgba(16, 185, 129, 0.12)',
+                color: '#10b981',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px'
+              }}>
+                <ShieldCheck size={12} /> Quota Guard Active
+              </span>
+            </div>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              Interactive OpenStreetMap showing radius boundary & {facilities.length} nearby recycling plants
+              Interactive view with radius boundary & {facilities.length} nearby recycling plants
             </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span> Area Origin
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }}></span> Compatible Plant
-          </span>
+        {/* Basemap Switcher & Legend */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{
+            display: 'flex',
+            background: 'rgba(0, 0, 0, 0.3)',
+            padding: '3px',
+            borderRadius: '8px',
+            border: '1px solid var(--border-glass)'
+          }}>
+            <button
+              type="button"
+              onClick={() => setMapLayer('carto_dark')}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+                border: 'none',
+                background: mapLayer === 'carto_dark' ? 'var(--indigo-600)' : 'transparent',
+                color: mapLayer === 'carto_dark' ? '#ffffff' : 'var(--text-secondary)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Dark Matter (Free)
+            </button>
+            <button
+              type="button"
+              onClick={() => setMapLayer('mappls')}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+                border: 'none',
+                background: mapLayer === 'mappls' ? '#0284c7' : 'transparent',
+                color: mapLayer === 'mappls' ? '#ffffff' : 'var(--text-secondary)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Mappls GIS (Opt-in)
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.8rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span> Area Origin
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }}></span> Compatible Plant
+            </span>
+          </div>
         </div>
       </div>
 
+      {tileError && (
+        <div style={{
+          marginBottom: '0.75rem',
+          padding: '0.5rem 0.8rem',
+          borderRadius: '8px',
+          background: 'rgba(239, 68, 68, 0.12)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          color: '#f87171',
+          fontSize: '0.78rem'
+        }}>
+          Note: Mappls raster tiles returned an authorization notice. Safely fell back to Dark Matter base tiles to preserve reliability.
+        </div>
+      )}
+
       {/* Map Container */}
-      <div ref={mapContainerRef} style={{ width: '100%', height: '440px', borderRadius: '12px', overflow: 'hidden' }} />
+      <div ref={mapContainerRef} className="map-view-canvas" style={{ width: '100%', borderRadius: '12px', overflow: 'hidden' }} />
     </div>
   );
 }
+
+

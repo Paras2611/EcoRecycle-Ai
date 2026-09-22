@@ -7,7 +7,14 @@ import {
   Sparkles,
   Info,
   ExternalLink,
-  ShieldAlert
+  ShieldAlert,
+  LogIn,
+  LogOut,
+  User,
+  FolderHeart,
+  Menu,
+  X,
+  CheckCircle2
 } from 'lucide-react';
 import AreaSelector from './components/AreaSelector';
 import ImageUploader from './components/ImageUploader';
@@ -15,7 +22,9 @@ import WasteChart from './components/WasteChart';
 import MapView from './components/MapView';
 import FacilityCard from './components/FacilityCard';
 import RecommendationPanel from './components/RecommendationPanel';
-import { checkHealth, analyzeBatch, getNearbyFacilities } from './services/api';
+import AuthModal from './components/AuthModal';
+import SavedSessionsModal from './components/SavedSessionsModal';
+import { checkHealth, analyzeBatch, getNearbyFacilities, getMe, setAuthToken } from './services/api';
 
 // Initial PRD Benchmark Dataset for Karad (from EcoRecycle_AI_PRD.md Section 2 & 10)
 const KARAD_PRD_BENCHMARK = {
@@ -50,12 +59,24 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
 
-  // Check health and initialize facilities
+  // Authentication & Demo Mode State
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isSavedOpen, setIsSavedOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Check health, initial facilities, and current user
   useEffect(() => {
     async function init() {
       const health = await checkHealth();
       setBackendHealth(health);
       loadFacilities(area.lat, area.lon, area.radiusKm, selectedCategory);
+
+      // Check for logged-in user
+      const user = await getMe();
+      if (user) {
+        setCurrentUser(user);
+      }
     }
     init();
   }, []);
@@ -77,20 +98,20 @@ export default function App() {
     }
   };
 
-  const handleAnalyzeImages = async (files) => {
+  const handleAnalyzeImages = async (files, cityName) => {
     setLoading(true);
-    setStatusMessage(`Running deep learning inference on ${files.length} waste image(s)...`);
+    setStatusMessage(`Running MobileNetV2 deep learning on ${files.length} image(s) for ${cityName}...`);
     try {
-      const res = await analyzeBatch(files, area.name, area.lat, area.lon, area.radiusKm);
+      const res = await analyzeBatch(files, area.name, cityName, area.lat, area.lon, area.radiusKm);
       setAnalysisData(res);
       // Auto-select the top category
       const topCat = Object.entries(res.composition).sort((a, b) => b[1].count - a[1].count)[0]?.[0];
       if (topCat) setSelectedCategory(topCat);
-      setStatusMessage(`Success: Classified ${res.total_images} waste items across ${Object.keys(res.composition).length} categories.`);
+      setStatusMessage(`Success: Classified ${res.total_images} waste item(s) for ${cityName}. Saved to database!`);
       setTimeout(() => setStatusMessage(null), 5000);
     } catch (err) {
       console.error('Analysis error:', err);
-      setStatusMessage(`Analysis Notice: ${err.message}. Using simulated area composition.`);
+      setStatusMessage(`Analysis Notice: ${err.message}. Using simulated composition.`);
       setTimeout(() => setStatusMessage(null), 6000);
     } finally {
       setLoading(false);
@@ -101,6 +122,29 @@ export default function App() {
     setAnalysisData(KARAD_PRD_BENCHMARK);
     setSelectedCategory('plastic');
     setStatusMessage('Loaded official Karad Waste Survey Benchmark (100 sample items from PRD Section 10).');
+    setTimeout(() => setStatusMessage(null), 4000);
+  };
+
+  const handleSelectSession = (session) => {
+    setArea({
+      name: session.area_name,
+      lat: session.latitude,
+      lon: session.longitude,
+      radiusKm: session.radius_km,
+    });
+    // Set dominant category if available
+    if (session.waste_summary) {
+      const top = Object.entries(session.waste_summary).sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (top) setSelectedCategory(top);
+    }
+    setStatusMessage(`Loaded saved city session: "${session.city_name}". Map and recyclers re-centered!`);
+    setTimeout(() => setStatusMessage(null), 5000);
+  };
+
+  const handleLogout = () => {
+    setAuthToken(null);
+    setCurrentUser(null);
+    setStatusMessage('Signed out. You are now in Demo Guest Mode.');
     setTimeout(() => setStatusMessage(null), 4000);
   };
 
@@ -118,18 +162,155 @@ export default function App() {
           </div>
         </div>
 
-        <div className="nav-actions">
+        {/* Desktop Nav Controls */}
+        <div className="nav-actions desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          {/* Demo Mode or User Badge */}
+          {currentUser ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '8px',
+              background: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              color: 'var(--emerald-400)',
+              fontSize: '0.8rem',
+              fontWeight: 500
+            }}>
+              <User size={13} /> {currentUser.name}
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '8px',
+              background: 'rgba(99, 102, 241, 0.12)',
+              border: '1px solid rgba(99, 102, 241, 0.3)',
+              color: '#818cf8',
+              fontSize: '0.8rem',
+              fontWeight: 500
+            }}>
+              <Sparkles size={13} /> Demo Guest Mode
+            </div>
+          )}
+
+          {/* Saved City Sessions Button */}
+          <button
+            type="button"
+            onClick={() => setIsSavedOpen(true)}
+            className="btn-secondary"
+            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', gap: '5px' }}
+          >
+            <FolderHeart size={14} color="var(--cyan-400)" />
+            Saved City Sessions
+          </button>
+
+          {/* Login / Logout Button */}
+          {currentUser ? (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="btn-secondary"
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', gap: '5px' }}
+            >
+              <LogOut size={13} /> Sign Out
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsAuthOpen(true)}
+              className="btn-primary"
+              style={{ padding: '0.4rem 0.9rem', fontSize: '0.8rem', gap: '5px' }}
+            >
+              <LogIn size={13} /> Sign In / Register
+            </button>
+          )}
+
           <div className="status-pill">
             <span className="status-dot" style={{ backgroundColor: backendHealth.status === 'healthy' ? 'var(--emerald-400)' : '#f59e0b' }} />
             <span>FastAPI: {backendHealth.status === 'healthy' ? 'Online' : 'Connecting'}</span>
-            {backendHealth.facilities_indexed > 0 && (
-              <span style={{ color: 'var(--text-primary)', marginLeft: '4px' }}>
-                ({backendHealth.facilities_indexed} facilities)
+          </div>
+        </div>
+
+        {/* Mobile Hamburger Button */}
+        <button
+          type="button"
+          className="mobile-only"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.4rem' }}
+          aria-label="Toggle Navigation Menu"
+        >
+          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </header>
+
+      {/* Mobile Drawer Menu */}
+      {mobileMenuOpen && (
+        <div className="mobile-drawer">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                {currentUser ? `Logged in: ${currentUser.name}` : '⚡ Demo Mode Active'}
               </span>
+              <div className="status-pill" style={{ padding: '2px 8px' }}>
+                <span className="status-dot" style={{ backgroundColor: backendHealth.status === 'healthy' ? 'var(--emerald-400)' : '#f59e0b' }} />
+                <span>{backendHealth.status === 'healthy' ? 'Online' : 'Connecting'}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setIsSavedOpen(true); setMobileMenuOpen(false); }}
+              className="btn-secondary"
+              style={{ width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.9rem', fontSize: '0.85rem' }}
+            >
+              <FolderHeart size={16} color="var(--cyan-400)" />
+              Saved City Sessions
+            </button>
+
+            {currentUser ? (
+              <button
+                type="button"
+                onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                className="btn-secondary"
+                style={{ width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.9rem', fontSize: '0.85rem' }}
+              >
+                <LogOut size={16} /> Sign Out
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setIsAuthOpen(true); setMobileMenuOpen(false); }}
+                className="btn-primary"
+                style={{ width: '100%', justifyContent: 'center', padding: '0.65rem 0.9rem', fontSize: '0.85rem' }}
+              >
+                <LogIn size={16} /> Sign In / Register
+              </button>
             )}
           </div>
         </div>
-      </header>
+      )}
+
+      {/* Modals */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+          setStatusMessage(`Welcome, ${user.name}! Your analysis history will now be saved.`);
+          setTimeout(() => setStatusMessage(null), 5000);
+        }}
+      />
+
+      <SavedSessionsModal
+        isOpen={isSavedOpen}
+        onClose={() => setIsSavedOpen(false)}
+        onSelectSession={handleSelectSession}
+      />
+
 
       {/* Main Content */}
       <main className="main-content">
@@ -195,6 +376,7 @@ export default function App() {
           selectedCategory={selectedCategory}
           selectedFacility={selectedFacility}
           onSelectFacility={setSelectedFacility}
+          area={area}
         />
       </main>
 
@@ -211,12 +393,13 @@ export default function App() {
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
           <span>Framework: <strong>FastAPI + React Vite</strong></span>
           <span>•</span>
-          <span>Mapping: <strong>Leaflet + OpenStreetMap</strong></span>
+          <span>Mapping: <strong>Leaflet + Mappls (MapmyIndia) Quota-Preserved</strong></span>
           <span>•</span>
           <span>Vision: <strong>MobileNetV3 / EfficientNet-B0</strong></span>
           <span>•</span>
           <span>Region: <strong>Western Maharashtra (Karad Hub)</strong></span>
         </div>
+
         <p>© 2026 EcoRecycle AI — Engineered according to PRD Specifications for MCA Major Project.</p>
       </footer>
     </div>
