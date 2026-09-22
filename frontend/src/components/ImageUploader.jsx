@@ -1,8 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, Image as ImageIcon, Sparkles, Trash2, CheckCircle2, Camera, MapPin, Tag, Loader2 } from 'lucide-react';
+import { UploadCloud, Image as ImageIcon, Sparkles, Trash2, CheckCircle2, Camera, MapPin, Tag, Loader2, Target, Layers } from 'lucide-react';
 import CameraModal from './CameraModal';
 
-export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, initialCity = 'Karad' }) {
+export default function ImageUploader({
+  onAnalyze,
+  onDetectObjects,
+  onRunPhase2Demo,
+  detectedObjects,
+  scenePreviewUrl,
+  loading,
+  onLoadBenchmark,
+  initialCity = 'Karad'
+}) {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [cityName, setCityName] = useState(initialCity);
   const [dragOver, setDragOver] = useState(false);
@@ -53,6 +62,84 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
     if (selectedFiles.length > 0) {
       onAnalyze(selectedFiles, cityName);
     }
+  };
+
+  const handleTriggerDetectObjects = () => {
+    if (selectedFiles.length > 0 && onDetectObjects) {
+      onDetectObjects(selectedFiles[0], cityName);
+    }
+  };
+
+  // Phase 2: Create Multi-Object Waste Scene containing Plastic, Metal, Paper, and Cardboard
+  const createPhase2MultiScene = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    
+    // Background
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, 400, 400);
+
+    // Subtle grid divider lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(200, 0); ctx.lineTo(200, 400);
+    ctx.moveTo(0, 200); ctx.lineTo(400, 200);
+    ctx.stroke();
+
+    // 1. Quadrant 1 (Top-Left): Object 1 -> Plastic Bottle
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.roundRect(65, 45, 75, 120, [12]);
+    ctx.fill();
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(85, 25, 35, 20); // cap
+
+    // 2. Quadrant 2 (Top-Right): Object 2 -> Metal Can
+    const metalGrad = ctx.createLinearGradient(250, 0, 350, 0);
+    metalGrad.addColorStop(0, '#64748b');
+    metalGrad.addColorStop(0.3, '#cbd5e1');
+    metalGrad.addColorStop(0.5, '#ffffff');
+    metalGrad.addColorStop(0.7, '#cbd5e1');
+    metalGrad.addColorStop(1, '#475569');
+    ctx.fillStyle = metalGrad;
+    ctx.beginPath();
+    ctx.roundRect(260, 35, 80, 135, [14]);
+    ctx.fill();
+
+    // 3. Quadrant 3 (Bottom-Left): Object 3 -> Paper Document
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.roundRect(50, 235, 100, 130, [4]);
+    ctx.fill();
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 3;
+    for (let y = 255; y < 345; y += 16) {
+      ctx.beginPath();
+      ctx.moveTo(65, y);
+      ctx.lineTo(135, y);
+      ctx.stroke();
+    }
+
+    // 4. Quadrant 4 (Bottom-Right): Object 4 -> Cardboard Box
+    ctx.fillStyle = '#b45309';
+    ctx.beginPath();
+    ctx.roundRect(245, 240, 115, 120, [6]);
+    ctx.fill();
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(245, 295, 115, 10); // tape line
+
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], 'phase2_multi_object_waste_scene.jpg', { type: 'image/jpeg' });
+        handleFilesAdded([file]);
+        if (onDetectObjects) {
+          onDetectObjects(file, cityName);
+        }
+      }
+    }, 'image/jpeg');
   };
 
   // Helper to create synthetic demo sample image files for 1-click Demo Mode testing
@@ -347,6 +434,28 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
           </button>
           <button
             type="button"
+            onClick={createPhase2MultiScene}
+            style={{
+              padding: '5px 11px',
+              borderRadius: '8px',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(59, 130, 246, 0.22) 100%)',
+              border: '1px solid rgba(6, 182, 212, 0.5)',
+              color: 'var(--cyan-400)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              minHeight: '32px'
+            }}
+            title="Phase 2 Multi-Object Scene: Plastic + Metal + Paper + Cardboard"
+          >
+            <Target size={13} />
+            <span>⚡ Phase 2: Multi-Object Scene</span>
+          </button>
+          <button
+            type="button"
             onClick={() => createDemoSampleFile('box', 'demo_cardboard_box.jpg', '#d97706')}
             style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: '32px' }}
           >
@@ -361,6 +470,93 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
           </button>
         </div>
       </div>
+
+      {/* Phase 2: Neural Bounding Box Scene Viewfinder Overlay */}
+      {detectedObjects && detectedObjects.length > 0 && scenePreviewUrl && (
+        <div style={{
+          marginBottom: '1.25rem',
+          padding: '1rem',
+          borderRadius: '12px',
+          background: 'rgba(0, 0, 0, 0.45)',
+          border: '1px solid rgba(6, 182, 212, 0.35)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '0.75rem',
+            flexWrap: 'wrap',
+            gap: '0.5rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.88rem', fontWeight: 700, color: 'var(--cyan-400)' }}>
+              <Target size={17} />
+              <span>Phase 2: Localized Waste Detection ({detectedObjects.length} Objects)</span>
+            </div>
+            <span style={{ fontSize: '0.74rem', color: 'var(--emerald-400)', fontWeight: 600, background: 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: '6px' }}>
+              ✓ Bounding Boxes Verified
+            </span>
+          </div>
+
+          <div style={{
+            position: 'relative',
+            maxWidth: '380px',
+            margin: '0 auto',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
+          }}>
+            <img
+              src={scenePreviewUrl}
+              alt="Detected Waste Scene"
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+            />
+            {detectedObjects.map((obj, i) => {
+              const [ymin, xmin, ymax, xmax] = obj.bbox;
+              const colorMap = {
+                plastic: '#38bdf8',
+                metal: '#94a3b8',
+                paper: '#f59e0b',
+                cardboard: '#d97706'
+              };
+              const color = colorMap[obj.waste_type] || '#10b981';
+              return (
+                <div
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    top: `${ymin * 100}%`,
+                    left: `${xmin * 100}%`,
+                    width: `${(xmax - xmin) * 100}%`,
+                    height: `${(ymax - ymin) * 100}%`,
+                    border: `2.5px solid ${color}`,
+                    borderRadius: '6px',
+                    backgroundColor: `${color}25`,
+                    boxShadow: `0 0 10px ${color}88`,
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    padding: '2px 4px',
+                    pointerEvents: 'none'
+                  }}
+                >
+                  <span style={{
+                    background: color,
+                    color: '#0f172a',
+                    fontSize: '9px',
+                    fontWeight: 800,
+                    padding: '1px 5px',
+                    borderRadius: '3px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em'
+                  }}>
+                    {obj.name}: {obj.waste_type} ({Math.round(obj.confidence * 100)}%)
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Selected Previews with Thumbnails */}
       {selectedFiles.length > 0 && (
@@ -434,13 +630,40 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
 
       {/* Action Buttons */}
       <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+        {/* Phase 2: Detect Objects Button */}
         <button
           type="button"
           className="btn-primary"
           disabled={loading || selectedFiles.length === 0}
+          onClick={handleTriggerDetectObjects}
+          style={{
+            flex: '1 1 200px',
+            minHeight: '44px',
+            background: 'linear-gradient(135deg, #0284c7 0%, #0891b2 100%)',
+            opacity: (loading || selectedFiles.length === 0) ? 0.6 : 1
+          }}
+          title="Detect multi-objects (Object 1: Plastic, Object 2: Metal, Object 3: Paper, Object 4: Cardboard)"
+        >
+          {loading ? (
+            <>
+              <Loader2 size={16} className="spin-animation" />
+              <span>Detecting Objects...</span>
+            </>
+          ) : (
+            <>
+              <Target size={16} />
+              <span>Detect Objects (Phase 2)</span>
+            </>
+          )}
+        </button>
+
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={loading || selectedFiles.length === 0}
           onClick={handleTriggerAnalyze}
           style={{
-            flex: '1 1 210px',
+            flex: '1 1 180px',
             minHeight: '44px',
             opacity: (loading || selectedFiles.length === 0) ? 0.6 : 1
           }}
@@ -448,12 +671,12 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
           {loading ? (
             <>
               <Loader2 size={16} className="spin-animation" />
-              <span>MobileNetV2 Inference...</span>
+              <span>Analyzing...</span>
             </>
           ) : (
             <>
               <CheckCircle2 size={16} />
-              <span>Analyze {selectedFiles.length} Image{selectedFiles.length !== 1 ? 's' : ''} for {cityName || 'City'}</span>
+              <span>Batch ({selectedFiles.length})</span>
             </>
           )}
         </button>
@@ -463,11 +686,11 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
           className="btn-secondary"
           onClick={onLoadBenchmark}
           disabled={loading}
-          style={{ flex: '1 1 160px', minHeight: '44px' }}
+          style={{ flex: '1 1 140px', minHeight: '44px' }}
           title="Simulate 100-item Karad waste survey benchmark according to PRD Section 10"
         >
           <Sparkles size={15} color="var(--amber-400)" />
-          <span>Load PRD Benchmark</span>
+          <span>PRD Benchmark</span>
         </button>
       </div>
 

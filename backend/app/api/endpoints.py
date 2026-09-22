@@ -20,6 +20,8 @@ from backend.app.services.auth_service import (
 from backend.app.schemas.schemas import (
     ImageAnalysisResponse,
     BatchAnalysisResponse,
+    MultiObjectDetectionResponse,
+    DetectedWasteObject,
     AreaAnalysisRequest,
     FacilityItem,
     RecommendationRequest,
@@ -135,6 +137,132 @@ async def analyze_batch_images(
         "consensus_rate_percentage": aggregated.get("consensus_rate_percentage", 0.0),
         "dual_model_confirmed_count": aggregated.get("dual_model_confirmed_count", 0),
         "predictions": predictions
+    }
+
+@router.post("/detect/objects", response_model=MultiObjectDetectionResponse)
+async def detect_multi_objects(
+    image: UploadFile = File(...),
+    area_name: Optional[str] = Form("Karad, Maharashtra"),
+    city_name: Optional[str] = Form(None),
+    latitude: Optional[float] = Form(17.2880),
+    longitude: Optional[float] = Form(74.1920),
+    radius_km: Optional[float] = Form(50.0),
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Phase 2: Multi-Object Waste Detection & Intelligent Recycling Routing Pipeline.
+    Pipeline:
+      Waste Detection Model
+              ↓
+      Object 1 → Plastic
+      Object 2 → Metal
+      Object 3 → Paper
+      Object 4 → Cardboard
+              ↓
+      Composition Analysis
+              ↓
+      Recycling Recommendations
+              ↓
+      Nearby Facilities
+    """
+    contents = await image.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+    # 1. Detection Model forward pass
+    detection_res = classifier.detect_scene_objects(contents, filename=image.filename or "")
+
+    # 2. Extract unique waste types detected
+    detected_types = list(detection_res["composition"].keys())
+    if not detected_types:
+        detected_types = ["plastic"]
+
+    # 3. Generate Recycling Recommendations for each detected waste type
+    recommendations = {}
+    for wt in detected_types:
+        recommendations[wt] = get_recommendation_for_waste(wt)
+
+    # 4. Find Nearby Facilities matching the detected waste types
+    all_facilities = []
+    seen_ids = set()
+    for wt in detected_types:
+        facs = find_nearby_facilities(
+            db=db,
+            latitude=latitude,
+            longitude=longitude,
+            waste_type=wt,
+            radius_km=radius_km
+        )
+        for f in facs:
+            if f["id"] not in seen_ids:
+                seen_ids.add(f["id"])
+                all_facilities.append(f)
+
+    # Fallback to general nearby facilities if none specifically matched
+    if not all_facilities:
+        all_facilities = find_nearby_facilities(
+            db=db,
+            latitude=latitude,
+            longitude=longitude,
+            radius_km=radius_km
+        )
+
+    # Sort facilities by suitability score and distance
+    all_facilities.sort(key=lambda x: (-x["suitability_score"], x["distance_km"]))
+
+    # Optional: Persist session to DB
+    user_id = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+        payload = decode_access_token(token)
+        if payload and "sub" in payload:
+            user_id = payload["sub"]
+
+    resolved_city = city_name.strip() if city_name and city_name.strip() else (area_name.split(",")[0].strip() if area_name else "Karad")
+    resolved_area = f"{resolved_city}, Maharashtra" if "," not in (area_name or "") else area_name
+
+    session_id = None
+    try:
+        analysis_session = WasteAnalysis(
+            user_id=user_id,
+            latitude=latitude,
+            longitude=longitude,
+            area_name=resolved_area,
+            city_name=resolved_city,
+            radius_km=radius_km,
+            total_items=detection_res["total_objects"]
+        )
+        db.add(analysis_session)
+        db.flush()
+        session_id = analysis_session.id
+
+        for obj in detection_res["detected_objects"]:
+            db.add(WasteResult(
+                analysis_id=analysis_session.id,
+                waste_type=obj["waste_type"],
+                confidence=obj["confidence"],
+                quantity=1,
+                detected_object=obj.get("detected_object"),
+                image_name=f"{obj['name']}_{image.filename or 'scene.jpg'}"
+            ))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Warning: Failed to log multi-object detection session: {e}")
+
+    return {
+        "total_objects": detection_res["total_objects"],
+        "detected_objects": detection_res["detected_objects"],
+        "composition": detection_res["composition"],
+        "recyclable_count": detection_res["recyclable_count"],
+        "non_recyclable_count": detection_res["non_recyclable_count"],
+        "recyclable_percentage": detection_res["recyclable_percentage"],
+        "recommendations": recommendations,
+        "nearby_facilities": all_facilities,
+        "session_id": session_id,
+        "city_name": resolved_city,
+        "area_name": resolved_area
     }
 
 @router.get("/facilities/nearby", response_model=List[FacilityItem])

@@ -18,6 +18,17 @@ class CompositionItem(BaseModel):
     count: int
     percentage: float
 
+class DetectedWasteObject(BaseModel):
+    object_id: str
+    name: str
+    waste_type: str
+    detected_object: str
+    confidence: float
+    bbox: List[float]  # [ymin, xmin, ymax, xmax] normalized (0.0 to 1.0)
+    recyclable: bool
+    consensus_status: Optional[str] = None
+    model_engine: Optional[str] = None
+
 class BatchAnalysisResponse(BaseModel):
     total_images: int
     composition: Dict[str, CompositionItem]
@@ -67,6 +78,19 @@ class RecommendationResponse(BaseModel):
     waste_type: str
     process_info: RecommendedProcessInfo
     matched_facilities: List[FacilityItem]
+
+class MultiObjectDetectionResponse(BaseModel):
+    total_objects: int
+    detected_objects: List[DetectedWasteObject]
+    composition: Dict[str, CompositionItem]
+    recyclable_count: int
+    non_recyclable_count: int
+    recyclable_percentage: float
+    recommendations: Dict[str, RecommendedProcessInfo]
+    nearby_facilities: List[FacilityItem]
+    session_id: Optional[str] = None
+    city_name: Optional[str] = None
+    area_name: Optional[str] = None
 
 class AreaAnalysisResultResponse(BaseModel):
     area_name: str

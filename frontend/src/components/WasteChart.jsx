@@ -212,6 +212,57 @@ export default function WasteChart({ analysisData, selectedCategory, onSelectCat
         })}
       </div>
 
+      {/* Phase 2: Localized Multi-Object Detection Output */}
+      {analysisData.detected_objects && analysisData.detected_objects.length > 0 && (
+        <div style={{
+          marginBottom: '1rem',
+          padding: '0.85rem',
+          borderRadius: '10px',
+          background: 'rgba(6, 182, 212, 0.08)',
+          border: '1px solid rgba(6, 182, 212, 0.25)'
+        }}>
+          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--cyan-400)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <Cpu size={15} />
+              <span>Phase 2: Waste Detection Model Outputs ({analysisData.detected_objects.length} Objects)</span>
+            </div>
+            <span style={{ fontSize: '0.7rem', color: 'var(--emerald-400)', fontWeight: 600 }}>
+              Plastic · Metal · Paper · Cardboard
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem' }}>
+            {analysisData.detected_objects.map((obj, i) => {
+              const color = CATEGORY_COLORS[obj.waste_type] || '#64748b';
+              return (
+                <div
+                  key={i}
+                  onClick={() => onSelectCategory(obj.waste_type)}
+                  style={{
+                    padding: '0.5rem 0.65rem',
+                    borderRadius: '8px',
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: `1px solid ${color}55`,
+                    cursor: 'pointer',
+                    transition: 'transform 0.15s, border-color 0.15s'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-primary)' }}>{obj.name}</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 700, color }}>{Math.round(obj.confidence * 100)}%</span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color, textTransform: 'capitalize', fontWeight: 700, marginTop: '2px' }}>
+                    → {obj.waste_type}
+                  </div>
+                  <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '2px' }}>
+                    {obj.detected_object}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Individual Verified Predictions List */}
       {predictions && predictions.length > 0 && (
         <div style={{

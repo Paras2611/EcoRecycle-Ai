@@ -37,34 +37,89 @@ const PROCESS_KNOWLEDGE = {
     process: "Manual depopulation of components, safe battery removal, mechanical shredding, and chemical leaching of gold, silver, and copper.",
     impact: "Prevents toxic lead, mercury, and flame-retardant leachates into groundwater.",
     tips: "Store e-waste in moisture-proof containers away from heat sources."
+  },
+  cardboard: {
+    title: "Corrugated OCC Fiber Repulping & Converting",
+    process: "High-density baling, high-consistency hydrapulping, fiber fractionation, contaminant screening, and wet-end paperboard forming for new boxes.",
+    impact: "Recycling 1 ton of cardboard saves 17 trees, 4,000 kWh of electricity, and avoids 3 cubic yards of landfill congestion.",
+    tips: "Flatten boxes completely and strip all non-soluble plastic packing tapes and metallic staples."
+  },
+  wood: {
+    title: "Biomass Briquetting & Particle Board Extrusion",
+    process: "Industrial chipping and grinding, moisture reduction drying, and high-pressure hydraulic extrusion into clean solid biomass briquettes.",
+    impact: "Directly displaces fossil coal fuel in industrial boilers, producing carbon-neutral clean energy.",
+    tips: "Inspect and remove any nails, screws, and hazardous chemical preservative coatings."
+  },
+  textile: {
+    title: "Fiber Garnetting & Shoddy Yarn Spinning",
+    process: "Optical color sorting, mechanical rotary garnetting into shredded rag fibers, and re-spinning into acoustic insulation or carpet underlays.",
+    impact: "Diverts high-volume post-consumer garments from landfills and saves thousands of liters of cotton crop irrigation.",
+    tips: "Ensure materials are dry and pre-sorted between natural cottons and synthetic polyesters."
   }
 };
 
-export default function RecommendationPanel({ dominantCategory = 'plastic' }) {
+export default function RecommendationPanel({ dominantCategory = 'plastic', availableCategories = [], onSelectCategory }) {
   const normCategory = dominantCategory ? dominantCategory.toLowerCase() : 'plastic';
   const info = PROCESS_KNOWLEDGE[normCategory] || PROCESS_KNOWLEDGE['plastic'];
 
+  // Categories to display as selector pills
+  const displayTabs = availableCategories.length > 0 
+    ? availableCategories 
+    : ['plastic', 'metal', 'paper', 'cardboard'];
+
   return (
     <div className="glass-panel" style={{ padding: 'clamp(1rem, 2.5vw, 1.5rem)', background: 'rgba(15, 23, 42, 0.8)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1rem' }}>
-        <div style={{
-          background: 'rgba(251, 191, 36, 0.15)',
-          padding: '0.5rem',
-          borderRadius: '10px',
-          color: 'var(--amber-400)',
-          display: 'flex',
-          flexShrink: 0
-        }}>
-          <Lightbulb size={20} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.65rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{
+            background: 'rgba(251, 191, 36, 0.15)',
+            padding: '0.5rem',
+            borderRadius: '10px',
+            color: 'var(--amber-400)',
+            display: 'flex',
+            flexShrink: 0
+          }}>
+            <Lightbulb size={20} />
+          </div>
+          <div>
+            <h3 style={{ fontSize: 'clamp(1rem, 2vw, 1.15rem)', color: 'var(--text-primary)', fontWeight: 700 }}>
+              4. Recycling Process Blueprint: <span style={{ textTransform: 'capitalize', color: 'var(--amber-400)' }}>{normCategory}</span>
+            </h3>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              Domain-specific environmental workflow & processing methods for detected waste
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 style={{ fontSize: 'clamp(1rem, 2vw, 1.15rem)', color: 'var(--text-primary)', fontWeight: 700 }}>
-            4. Recycling Process Blueprint: <span style={{ textTransform: 'capitalize', color: 'var(--amber-400)' }}>{normCategory}</span>
-          </h3>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-            Domain-specific environmental workflow for the selected waste stream
-          </p>
-        </div>
+
+        {/* Multi-Stream Category Quick-Pills */}
+        {displayTabs && displayTabs.length > 0 && (
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            {displayTabs.map((cat) => {
+              const active = cat.toLowerCase() === normCategory;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => onSelectCategory && onSelectCategory(cat.toLowerCase())}
+                  style={{
+                    padding: '0.28rem 0.65rem',
+                    fontSize: '0.74rem',
+                    fontWeight: 600,
+                    borderRadius: '20px',
+                    border: active ? '1px solid var(--amber-400)' : '1px solid var(--border-glass)',
+                    background: active ? 'rgba(245, 158, 11, 0.2)' : 'rgba(0, 0, 0, 0.25)',
+                    color: active ? 'var(--amber-400)' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    textTransform: 'capitalize',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div style={{

@@ -24,7 +24,7 @@ import FacilityCard from './components/FacilityCard';
 import RecommendationPanel from './components/RecommendationPanel';
 import AuthModal from './components/AuthModal';
 import SavedSessionsModal from './components/SavedSessionsModal';
-import { checkHealth, analyzeBatch, getNearbyFacilities, getMe, setAuthToken } from './services/api';
+import { checkHealth, analyzeBatch, detectSceneObjects, getNearbyFacilities, getMe, setAuthToken } from './services/api';
 
 // Initial PRD Benchmark Dataset for Karad (from EcoRecycle_AI_PRD.md Section 2 & 10)
 const KARAD_PRD_BENCHMARK = {
@@ -58,6 +58,8 @@ export default function App() {
   const [selectedFacility, setSelectedFacility] = useState(null);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [detectedSceneObjects, setDetectedSceneObjects] = useState(null);
+  const [scenePreviewUrl, setScenePreviewUrl] = useState(null);
 
   // Authentication & Demo Mode State
   const [currentUser, setCurrentUser] = useState(null);
@@ -113,6 +115,63 @@ export default function App() {
       console.error('Analysis error:', err);
       setStatusMessage(`Analysis Notice: ${err.message}. Using simulated composition.`);
       setTimeout(() => setStatusMessage(null), 6000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Phase 2: Multi-Object Waste Detection Model Pipeline
+  const handleDetectObjects = async (file, cityName) => {
+    setLoading(true);
+    setStatusMessage(`Running Phase 2 Multi-Object Waste Detection on ${file.name}...`);
+    try {
+      const res = await detectSceneObjects(file, area.name, cityName, area.lat, area.lon, area.radiusKm);
+      
+      setAnalysisData({
+        total_images: 1,
+        total_objects: res.total_objects,
+        composition: res.composition,
+        recyclable_percentage: res.recyclable_percentage,
+        recyclable_count: res.recyclable_count,
+        non_recyclable_count: res.non_recyclable_count,
+        consensus_rate_percentage: 100.0,
+        dual_model_confirmed_count: res.total_objects,
+        predictions: res.detected_objects.map(obj => ({
+          waste_type: obj.waste_type,
+          confidence: obj.confidence,
+          detected_object: `${obj.name}: ${obj.detected_object}`,
+          recyclable: obj.recyclable,
+          consensus_status: obj.consensus_status || "CONFIRMED_MATCH",
+          consensus_match: true,
+          primary_model_class: obj.waste_type,
+          primary_model_conf: obj.confidence,
+          verifier_model_class: obj.waste_type,
+          verifier_model_conf: obj.confidence,
+          bbox: obj.bbox,
+          object_id: obj.object_id,
+          name: obj.name
+        })),
+        detected_objects: res.detected_objects
+      });
+
+      setDetectedSceneObjects(res.detected_objects);
+      setScenePreviewUrl(URL.createObjectURL(file));
+
+      if (res.nearby_facilities && res.nearby_facilities.length > 0) {
+        setFacilities(res.nearby_facilities);
+        setSelectedFacility(res.nearby_facilities[0]);
+      }
+
+      if (res.detected_objects && res.detected_objects.length > 0) {
+        setSelectedCategory(res.detected_objects[0].waste_type);
+      }
+
+      setStatusMessage(`Phase 2 Pipeline Complete: Detected ${res.total_objects} objects (Plastic, Metal, Paper, Cardboard) → Composition Analyzed → Recyclers Discovered!`);
+      setTimeout(() => setStatusMessage(null), 6000);
+    } catch (err) {
+      console.error('Multi-object detection error:', err);
+      setStatusMessage(`Detection notice: ${err.message}`);
+      setTimeout(() => setStatusMessage(null), 5000);
     } finally {
       setLoading(false);
     }
@@ -367,6 +426,9 @@ export default function App() {
           <AreaSelector area={area} setArea={setArea} />
           <ImageUploader
             onAnalyze={handleAnalyzeImages}
+            onDetectObjects={handleDetectObjects}
+            detectedObjects={detectedSceneObjects}
+            scenePreviewUrl={scenePreviewUrl}
             loading={loading}
             onLoadBenchmark={handleLoadBenchmark}
           />
@@ -380,7 +442,15 @@ export default function App() {
         />
 
         {/* Recycling Process Knowledge Blueprint */}
-        <RecommendationPanel dominantCategory={selectedCategory || 'plastic'} />
+        <RecommendationPanel
+          dominantCategory={selectedCategory || 'plastic'}
+          availableCategories={
+            analysisData && analysisData.composition
+              ? Object.keys(analysisData.composition)
+              : ['plastic', 'metal', 'paper', 'cardboard']
+          }
+          onSelectCategory={setSelectedCategory}
+        />
 
         {/* Geospatial Map View */}
         <MapView

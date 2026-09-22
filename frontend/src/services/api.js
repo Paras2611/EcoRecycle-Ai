@@ -157,6 +157,36 @@ export async function analyzeBatch(files, areaName = 'Karad, Maharashtra', cityN
   return await res.json();
 }
 
+export async function detectSceneObjects(file, areaName = 'Karad, Maharashtra', cityName = 'Karad', lat = 17.2880, lon = 74.1920, radiusKm = 50.0) {
+  const formData = new FormData();
+  formData.append('image', file);
+  formData.append('area_name', areaName);
+  if (cityName) {
+    formData.append('city_name', cityName);
+  }
+  formData.append('latitude', lat.toString());
+  formData.append('longitude', lon.toString());
+  formData.append('radius_km', radiusKm.toString());
+
+  const headers = {};
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api/v1/detect/objects`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Multi-object waste detection failed');
+  }
+  return await res.json();
+}
+
 export async function getNearbyFacilities(lat, lon, radiusKm = 50.0, wasteType = null) {
   let url = `${API_BASE_URL}/api/v1/facilities/nearby?latitude=${lat}&longitude=${lon}&radius_km=${radiusKm}`;
   if (wasteType) {
