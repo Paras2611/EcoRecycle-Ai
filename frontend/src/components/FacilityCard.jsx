@@ -36,20 +36,23 @@ export default function FacilityCard({ facilities = [], selectedCategory, select
   }
 
   return (
-    <div className="glass-panel" style={{ padding: '1.75rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.8rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+    <div className="glass-panel" style={{ padding: 'clamp(1rem, 2.5vw, 1.75rem)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.8rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <div style={{
             background: 'rgba(16, 185, 129, 0.15)',
             padding: '0.5rem',
-            borderRadius: '8px',
+            borderRadius: '10px',
             color: 'var(--emerald-400)',
-            display: 'flex'
+            display: 'flex',
+            flexShrink: 0
           }}>
             <Building2 size={20} />
           </div>
           <div>
-            <h3 style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>5. Recommended Recycling Facilities</h3>
+            <h3 style={{ fontSize: 'clamp(1rem, 2vw, 1.15rem)', color: 'var(--text-primary)', fontWeight: 700 }}>
+              5. Recommended Recycling Facilities
+            </h3>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
               Ranked by multi-factor suitability (material compatibility + distance + processing capacity)
             </p>
@@ -63,7 +66,8 @@ export default function FacilityCard({ facilities = [], selectedCategory, select
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 290px), 1fr))', gap: '0.9rem' }}>
+
         {facilities.map((fac) => {
           const isSelected = selectedFacility && selectedFacility.id === fac.id;
           const isCompatible = fac.is_compatible;

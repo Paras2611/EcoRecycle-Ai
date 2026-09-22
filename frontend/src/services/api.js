@@ -41,34 +41,49 @@ export function setAuthToken(token) {
 }
 
 export async function loginUser(email, password) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Login failed');
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), password }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Invalid email or password. Please check your credentials.');
+    }
+    const data = await res.json();
+    setAuthToken(data.access_token);
+    return data;
+  } catch (err) {
+    if (err.message && !err.message.includes('fetch')) {
+      throw err;
+    }
+    throw new Error(`Unable to reach server (${API_BASE_URL}). Please verify backend is running.`);
   }
-  const data = await res.json();
-  setAuthToken(data.access_token);
-  return data;
 }
 
 export async function registerUser(name, email, password) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || 'Registration failed');
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Registration failed. Please verify your details.');
+    }
+    const data = await res.json();
+    setAuthToken(data.access_token);
+    return data;
+  } catch (err) {
+    if (err.message && !err.message.includes('fetch')) {
+      throw err;
+    }
+    throw new Error(`Unable to reach server (${API_BASE_URL}). Please verify backend is running.`);
   }
-  const data = await res.json();
-  setAuthToken(data.access_token);
-  return data;
 }
+
 
 export async function getMe() {
   const token = getAuthToken();

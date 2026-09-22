@@ -45,39 +45,46 @@ export default function RecommendationPanel({ dominantCategory = 'plastic' }) {
   const info = PROCESS_KNOWLEDGE[normCategory] || PROCESS_KNOWLEDGE['plastic'];
 
   return (
-    <div className="glass-panel" style={{ padding: '1.5rem', background: 'rgba(15, 23, 42, 0.75)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
+    <div className="glass-panel" style={{ padding: 'clamp(1rem, 2.5vw, 1.5rem)', background: 'rgba(15, 23, 42, 0.8)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1rem' }}>
         <div style={{
           background: 'rgba(251, 191, 36, 0.15)',
           padding: '0.5rem',
-          borderRadius: '8px',
+          borderRadius: '10px',
           color: 'var(--amber-400)',
-          display: 'flex'
+          display: 'flex',
+          flexShrink: 0
         }}>
           <Lightbulb size={20} />
         </div>
         <div>
-          <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>Recycling Process Blueprint: <span style={{ textTransform: 'capitalize', color: 'var(--amber-400)' }}>{normCategory}</span></h3>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+          <h3 style={{ fontSize: 'clamp(1rem, 2vw, 1.15rem)', color: 'var(--text-primary)', fontWeight: 700 }}>
+            4. Recycling Process Blueprint: <span style={{ textTransform: 'capitalize', color: 'var(--amber-400)' }}>{normCategory}</span>
+          </h3>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
             Domain-specific environmental workflow for the selected waste stream
           </p>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-        <div style={{ background: 'rgba(0,0,0,0.25)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
+        gap: '0.85rem'
+      }}>
+        <div style={{ background: 'rgba(0,0,0,0.28)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--cyan-400)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <Sparkles size={14} /> Recommended Industrial Method
           </div>
-          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+          <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
             {info.title}
           </div>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
             {info.process}
           </p>
         </div>
 
-        <div style={{ background: 'rgba(0,0,0,0.25)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
+        <div style={{ background: 'rgba(0,0,0,0.28)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--emerald-400)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <Leaf size={14} /> Environmental & Energy Savings
           </div>
@@ -86,7 +93,7 @@ export default function RecommendationPanel({ dominantCategory = 'plastic' }) {
           </p>
         </div>
 
-        <div style={{ background: 'rgba(0,0,0,0.25)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
+        <div style={{ background: 'rgba(0,0,0,0.28)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#f59e0b', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <ShieldCheck size={14} /> Source Segregation Guidelines
           </div>

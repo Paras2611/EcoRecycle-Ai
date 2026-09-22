@@ -240,24 +240,38 @@ export default function App() {
           type="button"
           className="mobile-only"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.4rem' }}
+          style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid var(--border-glass)',
+            borderRadius: '10px',
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            minWidth: '44px',
+            minHeight: '44px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
           aria-label="Toggle Navigation Menu"
         >
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </header>
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div className="mobile-drawer">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                {currentUser ? `Logged in: ${currentUser.name}` : '⚡ Demo Mode Active'}
-              </span>
-              <div className="status-pill" style={{ padding: '2px 8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', padding: '1rem clamp(1rem, 3vw, 1.5rem)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-glass)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <User size={15} color="var(--emerald-400)" />
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {currentUser ? currentUser.name : 'Demo Guest Mode'}
+                </span>
+              </div>
+              <div className="status-pill" style={{ padding: '2px 8px', fontSize: '0.75rem' }}>
                 <span className="status-dot" style={{ backgroundColor: backendHealth.status === 'healthy' ? 'var(--emerald-400)' : '#f59e0b' }} />
-                <span>{backendHealth.status === 'healthy' ? 'Online' : 'Connecting'}</span>
+                <span>{backendHealth.status === 'healthy' ? 'API Online' : 'Connecting'}</span>
               </div>
             </div>
 
@@ -265,9 +279,9 @@ export default function App() {
               type="button"
               onClick={() => { setIsSavedOpen(true); setMobileMenuOpen(false); }}
               className="btn-secondary"
-              style={{ width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.9rem', fontSize: '0.85rem' }}
+              style={{ width: '100%', justifyContent: 'flex-start', padding: '0.75rem 1rem', fontSize: '0.9rem', minHeight: '44px' }}
             >
-              <FolderHeart size={16} color="var(--cyan-400)" />
+              <FolderHeart size={18} color="var(--cyan-400)" />
               Saved City Sessions
             </button>
 
@@ -276,23 +290,24 @@ export default function App() {
                 type="button"
                 onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
                 className="btn-secondary"
-                style={{ width: '100%', justifyContent: 'flex-start', padding: '0.6rem 0.9rem', fontSize: '0.85rem' }}
+                style={{ width: '100%', justifyContent: 'flex-start', padding: '0.75rem 1rem', fontSize: '0.9rem', minHeight: '44px' }}
               >
-                <LogOut size={16} /> Sign Out
+                <LogOut size={18} /> Sign Out
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => { setIsAuthOpen(true); setMobileMenuOpen(false); }}
                 className="btn-primary"
-                style={{ width: '100%', justifyContent: 'center', padding: '0.65rem 0.9rem', fontSize: '0.85rem' }}
+                style={{ width: '100%', justifyContent: 'center', padding: '0.75rem 1rem', fontSize: '0.9rem', minHeight: '44px' }}
               >
-                <LogIn size={16} /> Sign In / Register
+                <LogIn size={18} /> Sign In / Register
               </button>
             )}
           </div>
         </div>
       )}
+
 
       {/* Modals */}
       <AuthModal
@@ -327,19 +342,24 @@ export default function App() {
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '0.5rem',
-              padding: '0.6rem 1.25rem',
+              padding: '0.6rem clamp(0.75rem, 3vw, 1.25rem)',
               borderRadius: '9999px',
               background: 'rgba(16, 185, 129, 0.15)',
               border: '1px solid rgba(16, 185, 129, 0.3)',
               color: 'var(--emerald-400)',
-              fontSize: '0.88rem',
+              fontSize: 'clamp(0.75rem, 2vw, 0.88rem)',
               marginBottom: '1rem',
+              maxWidth: '100%',
+              wordBreak: 'break-word',
               animation: 'fadeIn 0.3s ease-in'
             }}>
-              <Sparkles size={16} /> {statusMessage}
+              <Sparkles size={16} style={{ flexShrink: 0 }} />
+              <span>{statusMessage}</span>
             </div>
           )}
+
         </section>
 
         {/* Two Column Grid: Inputs */}
@@ -365,10 +385,12 @@ export default function App() {
         {/* Geospatial Map View */}
         <MapView
           area={area}
+          setArea={setArea}
           facilities={facilities}
           selectedFacility={selectedFacility}
           onSelectFacility={setSelectedFacility}
         />
+
 
         {/* Recommended Facilities Card Grid */}
         <FacilityCard
@@ -384,24 +406,34 @@ export default function App() {
       <footer style={{
         marginTop: 'auto',
         borderTop: '1px solid var(--border-glass)',
-        padding: '1.75rem 2rem',
+        padding: 'clamp(1.25rem, 3vw, 1.75rem) 1rem',
         textAlign: 'center',
-        background: 'rgba(9, 13, 22, 0.95)',
+        background: 'rgba(9, 13, 22, 0.96)',
         color: 'var(--text-muted)',
-        fontSize: '0.85rem'
+        fontSize: 'clamp(0.75rem, 2vw, 0.84rem)',
+        lineHeight: 1.6
       }}>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-          <span>Framework: <strong>FastAPI + React Vite</strong></span>
-          <span>•</span>
-          <span>Mapping: <strong>Leaflet + Mappls (MapmyIndia) Quota-Preserved</strong></span>
-          <span>•</span>
-          <span>Vision: <strong>MobileNetV3 / EfficientNet-B0</strong></span>
-          <span>•</span>
-          <span>Region: <strong>Western Maharashtra (Karad Hub)</strong></span>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 'clamp(0.5rem, 2vw, 1.25rem)',
+          marginBottom: '0.6rem',
+          flexWrap: 'wrap',
+          fontSize: 'clamp(0.74rem, 1.8vw, 0.82rem)'
+        }}>
+          <span>Framework: <strong style={{ color: 'var(--text-secondary)' }}>FastAPI + React Vite</strong></span>
+          <span className="desktop-only">•</span>
+          <span>Mapping: <strong style={{ color: 'var(--text-secondary)' }}>Leaflet + Mappls</strong></span>
+          <span className="desktop-only">•</span>
+          <span>Vision: <strong style={{ color: 'var(--text-secondary)' }}>MobileNetV2 Neural Engine</strong></span>
+          <span className="desktop-only">•</span>
+          <span>Hub: <strong style={{ color: 'var(--text-secondary)' }}>Western Maharashtra</strong></span>
         </div>
 
         <p>© 2026 EcoRecycle AI — Engineered according to PRD Specifications for MCA Major Project.</p>
       </footer>
+
     </div>
   );
 }

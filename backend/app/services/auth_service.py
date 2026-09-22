@@ -1,7 +1,7 @@
 import os
+import bcrypt
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
-from passlib.context import CryptContext
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from backend.app.models.models import User
@@ -10,13 +10,22 @@ SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "ecorecycle-super-secret-jwt-key-2
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    """Safely verify a plaintext password against a bcrypt hash."""
+    if not plain_password or not hashed_password:
+        return False
+    try:
+        pwd_bytes = plain_password.encode('utf-8')[:72]
+        hash_bytes = hashed_password.encode('utf-8')
+        return bcrypt.checkpw(pwd_bytes, hash_bytes)
+    except Exception:
+        return False
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    """Generate a secure bcrypt hash for the provided password."""
+    pwd_bytes = password.encode('utf-8')[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode('utf-8')
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
@@ -35,7 +44,7 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
         return None
 
 def ensure_demo_user(db: Session) -> User:
-    """Ensure the default Demo User exists in database."""
+    """Ensure the default Demo User exists and has a verified password in the database."""
     demo_email = "demo@ecorecycle.ai"
     user = db.query(User).filter(User.email == demo_email).first()
     if not user:
@@ -48,4 +57,11 @@ def ensure_demo_user(db: Session) -> User:
         db.add(user)
         db.commit()
         db.refresh(user)
+    else:
+        # Guarantee demo account password validity
+        if not verify_password("demo123", user.password_hash):
+            user.password_hash = get_password_hash("demo123")
+            db.commit()
+            db.refresh(user)
     return user
+

@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { MapPin, Compass, Navigation, Search, ShieldCheck, CheckCircle2 } from 'lucide-react';
-import { fetchMapplsReverseGeocode } from '../services/api';
+import React from 'react';
+import { MapPin, Compass, Navigation } from 'lucide-react';
 
 const PRESET_LOCATIONS = [
   { name: 'Karad, Maharashtra', lat: 17.2880, lon: 74.1920, state: 'Primary Target Hub' },
@@ -11,9 +10,6 @@ const PRESET_LOCATIONS = [
 ];
 
 export default function AreaSelector({ area, setArea }) {
-  const [isResolving, setIsResolving] = useState(false);
-  const [geoStatus, setGeoStatus] = useState(null);
-
   const handlePresetChange = (preset) => {
     setArea((prev) => ({
       ...prev,
@@ -21,47 +17,27 @@ export default function AreaSelector({ area, setArea }) {
       lat: preset.lat,
       lon: preset.lon,
     }));
-    setGeoStatus({ source: 'local_preset', message: 'Instant Preset ($0 API Calls)' });
   };
-
-  const handleMapplsLookup = async () => {
-    setIsResolving(true);
-    try {
-      const data = await fetchMapplsReverseGeocode(area.lat, area.lon);
-      if (data && data.formatted_address) {
-        setArea((prev) => ({
-          ...prev,
-          name: data.locality ? `${data.locality}, ${data.state}` : data.formatted_address,
-        }));
-        const isCached = data.cache_hit || data.client_cache_hit || data.source?.includes('cache');
-        setGeoStatus({
-          source: isCached ? 'cache' : 'mappls_live',
-          message: isCached ? 'Cached Locality ($0 Quota Used)' : 'Resolved via Mappls'
-        });
-      }
-    } catch (err) {
-      setGeoStatus({ source: 'error', message: 'Using local coordinates' });
-    } finally {
-      setIsResolving(false);
-    }
-  };
-
 
   return (
-    <div className="glass-panel" style={{ padding: '1.5rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
+    <div className="glass-panel" style={{ padding: 'clamp(1rem, 2.5vw, 1.5rem)' }}>
+      {/* Section Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1.25rem' }}>
         <div style={{
           background: 'rgba(16, 185, 129, 0.15)',
           padding: '0.5rem',
-          borderRadius: '8px',
+          borderRadius: '10px',
           color: 'var(--emerald-400)',
-          display: 'flex'
+          display: 'flex',
+          flexShrink: 0
         }}>
           <MapPin size={20} />
         </div>
         <div>
-          <h3 style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>1. Geographic Area Selection</h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+          <h3 style={{ fontSize: 'clamp(1rem, 2vw, 1.15rem)', color: 'var(--text-primary)', fontWeight: 700 }}>
+            1. Geographic Area Selection
+          </h3>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
             Select target locality to analyze waste generation and discover local recyclers
           </p>
         </div>
@@ -69,10 +45,10 @@ export default function AreaSelector({ area, setArea }) {
 
       {/* Preset Quick Chips */}
       <div style={{ marginBottom: '1.25rem' }}>
-        <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.45rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
           Select Locality Preset
         </label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
           {PRESET_LOCATIONS.map((preset) => {
             const isSelected = area.name === preset.name;
             return (
@@ -81,22 +57,23 @@ export default function AreaSelector({ area, setArea }) {
                 type="button"
                 onClick={() => handlePresetChange(preset)}
                 style={{
-                  padding: '0.45rem 0.9rem',
+                  padding: '0.45rem 0.85rem',
                   borderRadius: '10px',
-                  fontSize: '0.82rem',
+                  fontSize: 'clamp(0.75rem, 2vw, 0.82rem)',
                   fontWeight: 500,
                   cursor: 'pointer',
                   border: isSelected ? '1px solid var(--emerald-400)' : '1px solid var(--border-glass)',
-                  background: isSelected ? 'rgba(16, 185, 129, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                  background: isSelected ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.04)',
                   color: isSelected ? 'var(--emerald-400)' : 'var(--text-secondary)',
                   transition: 'all 0.2s ease',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.4rem'
+                  gap: '0.35rem',
+                  minHeight: '36px'
                 }}
               >
                 <Compass size={14} />
-                {preset.name.split(',')[0]}
+                <span>{preset.name.split(',')[0]}</span>
               </button>
             );
           })}
@@ -104,9 +81,14 @@ export default function AreaSelector({ area, setArea }) {
       </div>
 
       {/* Inputs for Lat, Lon, Radius */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))',
+        gap: '0.85rem',
+        marginBottom: '1.25rem'
+      }}>
         <div>
-          <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+          <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 500 }}>
             Latitude (°N)
           </label>
           <input
@@ -116,19 +98,19 @@ export default function AreaSelector({ area, setArea }) {
             onChange={(e) => setArea({ ...area, lat: parseFloat(e.target.value) || 0 })}
             style={{
               width: '100%',
-              padding: '0.6rem 0.8rem',
+              padding: '0.6rem 0.75rem',
               borderRadius: '8px',
               border: '1px solid var(--border-glass)',
-              background: 'rgba(0, 0, 0, 0.25)',
+              background: 'rgba(0, 0, 0, 0.28)',
               color: 'var(--text-primary)',
-              fontSize: '0.9rem',
+              fontSize: '16px', // Prevents iOS auto-zoom
               outline: 'none'
             }}
           />
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+          <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.35rem', fontWeight: 500 }}>
             Longitude (°E)
           </label>
           <input
@@ -138,20 +120,20 @@ export default function AreaSelector({ area, setArea }) {
             onChange={(e) => setArea({ ...area, lon: parseFloat(e.target.value) || 0 })}
             style={{
               width: '100%',
-              padding: '0.6rem 0.8rem',
+              padding: '0.6rem 0.75rem',
               borderRadius: '8px',
               border: '1px solid var(--border-glass)',
-              background: 'rgba(0, 0, 0, 0.25)',
+              background: 'rgba(0, 0, 0, 0.28)',
               color: 'var(--text-primary)',
-              fontSize: '0.9rem',
+              fontSize: '16px', // Prevents iOS auto-zoom
               outline: 'none'
             }}
           />
         </div>
 
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>
               Discovery Radius
             </label>
             <span style={{ fontSize: '0.8rem', color: 'var(--emerald-400)', fontWeight: 600 }}>
@@ -167,6 +149,7 @@ export default function AreaSelector({ area, setArea }) {
             onChange={(e) => setArea({ ...area, radiusKm: parseInt(e.target.value) || 25 })}
             style={{
               width: '100%',
+              height: '32px',
               accentColor: 'var(--emerald-400)',
               cursor: 'pointer'
             }}
@@ -174,63 +157,27 @@ export default function AreaSelector({ area, setArea }) {
         </div>
       </div>
 
-      {/* Locality Resolver & Status Bar */}
+      {/* Locality Status Bar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '0.75rem',
-        padding: '0.75rem 1rem',
+        gap: '0.6rem',
+        padding: '0.75rem 0.9rem',
         borderRadius: '10px',
         background: 'rgba(16, 185, 129, 0.08)',
         border: '1px solid rgba(16, 185, 129, 0.2)',
         fontSize: '0.82rem',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)' }}>
-          <Navigation size={15} color="var(--emerald-400)" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+          <Navigation size={15} color="var(--emerald-400)" style={{ flexShrink: 0 }} />
           <span>Active Zone: <strong style={{ color: 'var(--text-primary)' }}>{area.name}</strong></span>
-          {geoStatus && (
-            <span style={{
-              fontSize: '0.7rem',
-              padding: '2px 6px',
-              borderRadius: '6px',
-              background: geoStatus.source === 'cache' || geoStatus.source === 'local_preset' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(56, 189, 248, 0.2)',
-              color: geoStatus.source === 'cache' || geoStatus.source === 'local_preset' ? '#34d399' : '#38bdf8',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '3px'
-            }}>
-              <CheckCircle2 size={11} /> {geoStatus.message}
-            </span>
-          )}
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            ({area.lat.toFixed(4)}°N, {area.lon.toFixed(4)}°E)
+          </span>
         </div>
-
-        <button
-          type="button"
-          onClick={handleMapplsLookup}
-          disabled={isResolving}
-          style={{
-            padding: '0.35rem 0.75rem',
-            borderRadius: '6px',
-            fontSize: '0.76rem',
-            fontWeight: 500,
-            cursor: isResolving ? 'not-allowed' : 'pointer',
-            border: '1px solid rgba(56, 189, 248, 0.4)',
-            background: 'rgba(56, 189, 248, 0.1)',
-            color: '#38bdf8',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            transition: 'all 0.2s ease'
-          }}
-          title="Resolve official Indian postal locality using Mappls (strict caching enabled)"
-        >
-          <Search size={12} />
-          {isResolving ? 'Resolving...' : 'Identify Locality (Mappls)'}
-        </button>
       </div>
     </div>
   );
 }
-

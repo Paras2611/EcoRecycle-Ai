@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, Image as ImageIcon, Sparkles, Trash2, CheckCircle2, Camera, MapPin, Tag } from 'lucide-react';
+import { UploadCloud, Image as ImageIcon, Sparkles, Trash2, CheckCircle2, Camera, MapPin, Tag, Loader2 } from 'lucide-react';
 
 export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, initialCity = 'Karad' }) {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -94,20 +94,24 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '1.5rem' }}>
+    <div className="glass-panel" style={{ padding: 'clamp(1rem, 2.5vw, 1.5rem)' }}>
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.6rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <div style={{
             background: 'rgba(6, 182, 212, 0.15)',
             padding: '0.5rem',
-            borderRadius: '8px',
+            borderRadius: '10px',
             color: 'var(--cyan-400)',
-            display: 'flex'
+            display: 'flex',
+            flexShrink: 0
           }}>
             <UploadCloud size={20} />
           </div>
           <div>
-            <h3 style={{ fontSize: '1.15rem', color: 'var(--text-primary)' }}>2. Waste Image Intake & City Tagging</h3>
+            <h3 style={{ fontSize: 'clamp(1rem, 2vw, 1.15rem)', color: 'var(--text-primary)', fontWeight: 700 }}>
+              2. Waste Image Intake & City Tagging
+            </h3>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
               Tag images with your City name to save records and discover nearest recyclers
             </p>
@@ -119,14 +123,17 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
             type="button"
             onClick={handleClearAll}
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              fontSize: '0.8rem',
+              background: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#f87171',
+              fontSize: '0.78rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.3rem'
+              gap: '0.35rem',
+              padding: '0.35rem 0.65rem',
+              borderRadius: '8px',
+              minHeight: '32px'
             }}
           >
             <Trash2 size={13} /> Clear All ({selectedFiles.length})
@@ -137,21 +144,21 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
       {/* City Name Tagging Field */}
       <div style={{
         marginBottom: '1rem',
-        padding: '0.8rem 1rem',
+        padding: '0.75rem 0.9rem',
         borderRadius: '10px',
         background: 'rgba(255, 255, 255, 0.02)',
         border: '1px solid var(--border-glass)',
         display: 'flex',
         alignItems: 'center',
-        gap: '0.75rem',
+        gap: '0.65rem',
         flexWrap: 'wrap'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--cyan-400)', fontSize: '0.85rem', fontWeight: 600 }}>
-          <Tag size={15} />
-          <span>City / Municipality Name:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--cyan-400)', fontSize: '0.82rem', fontWeight: 600, flexShrink: 0 }}>
+          <Tag size={14} />
+          <span>City / Municipality:</span>
         </div>
-        <div style={{ flex: 1, minWidth: '160px', position: 'relative' }}>
-          <MapPin size={14} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-muted)' }} />
+        <div style={{ flex: '1 1 180px', position: 'relative' }}>
+          <MapPin size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"
             placeholder="e.g. Karad, Satara, Kolhapur, Pune..."
@@ -159,19 +166,16 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
             onChange={(e) => setCityName(e.target.value)}
             style={{
               width: '100%',
-              padding: '0.45rem 0.75rem 0.45rem 2rem',
+              padding: '0.5rem 0.75rem 0.5rem 2rem',
               borderRadius: '8px',
               border: '1px solid var(--border-glass)',
               background: 'rgba(0, 0, 0, 0.3)',
               color: 'var(--text-primary)',
-              fontSize: '0.85rem',
+              fontSize: '16px', // Prevents iOS auto-zoom
               outline: 'none'
             }}
           />
         </div>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          (Images will be saved under this city for future recycler searches)
-        </span>
       </div>
 
       {/* Drop Zone & File Pickers */}
@@ -181,12 +185,12 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
         style={{
-          border: `2px dashed ${dragOver ? 'var(--emerald-400)' : 'rgba(255, 255, 255, 0.12)'}`,
+          border: `2px dashed ${dragOver ? 'var(--emerald-400)' : 'rgba(255, 255, 255, 0.14)'}`,
           borderRadius: '12px',
-          padding: '1.75rem 1.25rem',
+          padding: 'clamp(1.25rem, 3vw, 1.75rem) 1rem',
           textAlign: 'center',
           cursor: 'pointer',
-          background: dragOver ? 'rgba(16, 185, 129, 0.06)' : 'rgba(0, 0, 0, 0.15)',
+          background: dragOver ? 'rgba(16, 185, 129, 0.06)' : 'rgba(0, 0, 0, 0.18)',
           transition: 'all 0.2s ease',
           marginBottom: '1rem'
         }}
@@ -211,23 +215,23 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
         />
 
         <div style={{
-          width: '46px',
-          height: '46px',
+          width: '44px',
+          height: '44px',
           borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.05)',
+          background: 'rgba(255, 255, 255, 0.06)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          margin: '0 auto 0.6rem',
+          margin: '0 auto 0.5rem',
           color: 'var(--cyan-400)'
         }}>
           <ImageIcon size={22} />
         </div>
 
-        <p style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+        <p style={{ fontSize: 'clamp(0.85rem, 2vw, 0.92rem)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
           Drag & drop waste images, or <span style={{ color: 'var(--emerald-400)' }}>browse files</span>
         </p>
-        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
           Supports JPG, PNG, WEBP (Single or Bulk batch up to 100 images)
         </p>
 
@@ -237,20 +241,22 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
             type="button"
             onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
             style={{
-              padding: '0.4rem 0.8rem',
+              padding: '0.45rem 0.9rem',
               borderRadius: '8px',
               border: '1px solid rgba(16, 185, 129, 0.4)',
-              background: 'rgba(16, 185, 129, 0.12)',
+              background: 'rgba(16, 185, 129, 0.14)',
               color: 'var(--emerald-400)',
               fontSize: '0.78rem',
-              fontWeight: 500,
+              fontWeight: 600,
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '5px'
+              gap: '6px',
+              minHeight: '38px',
+              touchAction: 'manipulation'
             }}
           >
-            <Camera size={13} /> Capture with Camera
+            <Camera size={15} /> Capture with Camera
           </button>
         </div>
       </div>
@@ -269,36 +275,36 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
         gap: '0.5rem'
       }}>
         <span style={{ fontSize: '0.76rem', color: 'var(--indigo-400)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Sparkles size={13} /> <strong>Demo Mode Samples:</strong>
+          <Sparkles size={13} /> <strong>1-Click Samples:</strong>
         </span>
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => createDemoSampleFile('bottle', 'demo_plastic_bottle.jpg', '#3b82f6')}
-            style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer' }}
+            style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: '32px' }}
           >
-            + Plastic Bottle
+            + Plastic
           </button>
           <button
             type="button"
             onClick={() => createDemoSampleFile('can', 'demo_aluminum_can.jpg', '#94a3b8')}
-            style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer' }}
+            style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: '32px' }}
           >
-            + Soda Can
+            + Can
           </button>
           <button
             type="button"
             onClick={() => createDemoSampleFile('box', 'demo_cardboard_box.jpg', '#d97706')}
-            style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer' }}
+            style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: '32px' }}
           >
-            + Cardboard Box
+            + Cardboard
           </button>
           <button
             type="button"
             onClick={() => createDemoSampleFile('organic', 'demo_vegetable_peels.jpg', '#10b981')}
-            style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer' }}
+            style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: '32px' }}
           >
-            + Organic Food
+            + Food
           </button>
         </div>
       </div>
@@ -309,8 +315,8 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
           maxHeight: '180px',
           overflowY: 'auto',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-          gap: '0.6rem',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+          gap: '0.5rem',
           marginBottom: '1rem'
         }}>
           {selectedFiles.map((file, idx) => (
@@ -329,15 +335,15 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
                 <img
                   src={previewUrls[idx]}
                   alt={file.name}
-                  style={{ width: '100%', height: '70px', objectFit: 'cover', borderRadius: '6px' }}
+                  style={{ width: '100%', height: '65px', objectFit: 'cover', borderRadius: '6px' }}
                 />
               ) : (
-                <div style={{ height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                <div style={{ height: '65px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
                   <ImageIcon size={20} />
                 </div>
               )}
               <div style={{
-                fontSize: '0.7rem',
+                fontSize: '0.68rem',
                 color: 'var(--text-primary)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -353,8 +359,8 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
                   position: 'absolute',
                   top: '6px',
                   right: '6px',
-                  width: '18px',
-                  height: '18px',
+                  width: '20px',
+                  height: '20px',
                   borderRadius: '50%',
                   background: 'rgba(239, 68, 68, 0.85)',
                   border: 'none',
@@ -363,7 +369,7 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '11px'
+                  fontSize: '12px'
                 }}
               >
                 ×
@@ -374,19 +380,27 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
       )}
 
       {/* Action Buttons */}
-      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
         <button
           type="button"
           className="btn-primary"
           disabled={loading || selectedFiles.length === 0}
           onClick={handleTriggerAnalyze}
-          style={{ flex: 1, minWidth: '220px', opacity: (loading || selectedFiles.length === 0) ? 0.6 : 1 }}
+          style={{
+            flex: '1 1 210px',
+            minHeight: '44px',
+            opacity: (loading || selectedFiles.length === 0) ? 0.6 : 1
+          }}
         >
           {loading ? (
-            <span>MobileNetV2 Neural Inference...</span>
+            <>
+              <Loader2 size={16} className="spin-animation" />
+              <span>MobileNetV2 Inference...</span>
+            </>
           ) : (
             <>
-              <CheckCircle2 size={16} /> Analyze {selectedFiles.length} Image{selectedFiles.length !== 1 ? 's' : ''} for {cityName || 'City'}
+              <CheckCircle2 size={16} />
+              <span>Analyze {selectedFiles.length} Image{selectedFiles.length !== 1 ? 's' : ''} for {cityName || 'City'}</span>
             </>
           )}
         </button>
@@ -396,7 +410,7 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
           className="btn-secondary"
           onClick={onLoadBenchmark}
           disabled={loading}
-          style={{ minWidth: '180px' }}
+          style={{ flex: '1 1 160px', minHeight: '44px' }}
           title="Simulate 100-item Karad waste survey benchmark according to PRD Section 10"
         >
           <Sparkles size={15} color="var(--amber-400)" />
@@ -406,4 +420,3 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
     </div>
   );
 }
-
