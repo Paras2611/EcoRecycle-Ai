@@ -132,6 +132,8 @@ async def analyze_batch_images(
         "recyclable_count": aggregated["recyclable_count"],
         "non_recyclable_count": aggregated["non_recyclable_count"],
         "recyclable_percentage": aggregated["recyclable_percentage"],
+        "consensus_rate_percentage": aggregated.get("consensus_rate_percentage", 0.0),
+        "dual_model_confirmed_count": aggregated.get("dual_model_confirmed_count", 0),
         "predictions": predictions
     }
 

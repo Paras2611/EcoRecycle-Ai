@@ -66,23 +66,59 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, 224, 224);
 
-    // Waste shape
-    ctx.fillStyle = colorHex;
+    // Waste shape & optical material signature
     if (type === 'bottle') {
+      ctx.fillStyle = colorHex;
       ctx.beginPath();
       ctx.roundRect(80, 50, 64, 130, [10, 10, 5, 5]);
       ctx.fill();
       ctx.fillStyle = '#38bdf8';
       ctx.fillRect(95, 30, 34, 20); // cap
-    } else if (type === 'can') {
+    } else if (type === 'can' || type === 'metal') {
+      // Metallic specular highlight gradient
+      const metalGrad = ctx.createLinearGradient(75, 0, 150, 0);
+      metalGrad.addColorStop(0, '#64748b');
+      metalGrad.addColorStop(0.3, '#cbd5e1');
+      metalGrad.addColorStop(0.5, '#ffffff'); // bright metallic reflection
+      metalGrad.addColorStop(0.7, '#cbd5e1');
+      metalGrad.addColorStop(1, '#475569');
+      ctx.fillStyle = metalGrad;
       ctx.beginPath();
       ctx.roundRect(75, 40, 74, 140, [12]);
       ctx.fill();
     } else if (type === 'box') {
+      ctx.fillStyle = colorHex;
       ctx.beginPath();
       ctx.roundRect(50, 60, 124, 100, [6]);
       ctx.fill();
+      // tape line
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(50, 105, 124, 1);
+    } else if (type === 'wood') {
+      // Timber wood planks with cellulose grain lines
+      ctx.fillStyle = '#b45309';
+      ctx.fillRect(45, 45, 134, 134);
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 2;
+      for (let y = 55; y < 175; y += 18) {
+        ctx.beginPath();
+        ctx.moveTo(45, y);
+        ctx.lineTo(179, y);
+        ctx.stroke();
+      }
+    } else if (type === 'organic') {
+      // Organic vegetable / fruit peel with high bio-chroma
+      ctx.fillStyle = '#16a34a';
+      ctx.beginPath();
+      ctx.ellipse(100, 110, 50, 65, Math.PI / 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.ellipse(125, 120, 35, 45, -Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
     } else {
+      ctx.fillStyle = colorHex;
       ctx.beginPath();
       ctx.arc(112, 112, 55, 0, Math.PI * 2);
       ctx.fill();
@@ -290,17 +326,24 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
           <button
             type="button"
-            onClick={() => createDemoSampleFile('bottle', 'demo_plastic_bottle.jpg', '#3b82f6')}
-            style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: '32px' }}
-          >
-            + Plastic
-          </button>
-          <button
-            type="button"
             onClick={() => createDemoSampleFile('can', 'demo_aluminum_can.jpg', '#94a3b8')}
             style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: '32px' }}
           >
-            + Can
+            + Metal Can
+          </button>
+          <button
+            type="button"
+            onClick={() => createDemoSampleFile('organic', 'demo_vegetable_peels.jpg', '#10b981')}
+            style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: '32px' }}
+          >
+            + Bio Waste
+          </button>
+          <button
+            type="button"
+            onClick={() => createDemoSampleFile('wood', 'demo_wooden_crate.jpg', '#b45309')}
+            style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: '32px' }}
+          >
+            + Wood
           </button>
           <button
             type="button"
@@ -311,10 +354,10 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
           </button>
           <button
             type="button"
-            onClick={() => createDemoSampleFile('organic', 'demo_vegetable_peels.jpg', '#10b981')}
+            onClick={() => createDemoSampleFile('bottle', 'demo_plastic_bottle.jpg', '#3b82f6')}
             style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-glass)', color: 'var(--text-secondary)', cursor: 'pointer', minHeight: '32px' }}
           >
-            + Food
+            + Plastic
           </button>
         </div>
       </div>

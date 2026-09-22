@@ -6,6 +6,13 @@ class ImageAnalysisResponse(BaseModel):
     confidence: float
     detected_object: Optional[str] = None
     recyclable: bool
+    consensus_status: Optional[str] = None
+    consensus_match: Optional[bool] = None
+    primary_model_class: Optional[str] = None
+    primary_model_conf: Optional[float] = None
+    verifier_model_class: Optional[str] = None
+    verifier_model_conf: Optional[float] = None
+    model_engine: Optional[str] = None
 
 class CompositionItem(BaseModel):
     count: int
@@ -17,6 +24,8 @@ class BatchAnalysisResponse(BaseModel):
     recyclable_count: int
     non_recyclable_count: int
     recyclable_percentage: float
+    consensus_rate_percentage: Optional[float] = None
+    dual_model_confirmed_count: Optional[int] = None
     predictions: List[ImageAnalysisResponse]
 
 class AreaAnalysisRequest(BaseModel):
