@@ -1,13 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, Image as ImageIcon, Sparkles, Trash2, CheckCircle2, Camera, MapPin, Tag, Loader2 } from 'lucide-react';
+import CameraModal from './CameraModal';
 
 export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, initialCity = 'Karad' }) {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [cityName, setCityName] = useState(initialCity);
   const [dragOver, setDragOver] = useState(false);
   const [previewUrls, setPreviewUrls] = useState([]);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+
 
   const handleFilesAdded = (filesArr) => {
     setSelectedFiles((prev) => [...prev, ...filesArr]);
@@ -235,28 +238,35 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
           Supports JPG, PNG, WEBP (Single or Bulk batch up to 100 images)
         </p>
 
-        {/* Camera Quick Button for Mobile / Tablet */}
+        {/* Camera Quick Button for Live Camera / Webcam */}
         <div style={{ marginTop: '0.75rem' }}>
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                setIsCameraOpen(true);
+              } else {
+                cameraInputRef.current?.click();
+              }
+            }}
             style={{
-              padding: '0.45rem 0.9rem',
-              borderRadius: '8px',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              background: 'rgba(16, 185, 129, 0.14)',
+              padding: '0.5rem 1rem',
+              borderRadius: '10px',
+              border: '1px solid rgba(16, 185, 129, 0.45)',
+              background: 'rgba(16, 185, 129, 0.16)',
               color: 'var(--emerald-400)',
-              fontSize: '0.78rem',
+              fontSize: '0.82rem',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              minHeight: '38px',
+              minHeight: '40px',
               touchAction: 'manipulation'
             }}
           >
-            <Camera size={15} /> Capture with Camera
+            <Camera size={16} /> Capture with Camera
           </button>
         </div>
       </div>
@@ -417,6 +427,14 @@ export default function ImageUploader({ onAnalyze, loading, onLoadBenchmark, ini
           <span>Load PRD Benchmark</span>
         </button>
       </div>
+
+      {/* Live Camera Viewfinder Modal */}
+      <CameraModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onPhotoCaptured={(file) => handleFilesAdded([file])}
+      />
     </div>
   );
 }
+
